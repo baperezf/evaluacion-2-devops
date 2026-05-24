@@ -56,7 +56,7 @@ jobs:
       - name: Desplegar Frontend en EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "34.201.0.3" # IP pública de la ec2 frontend
+          host: "13.220.129.95" # IP pública de la ec2 frontend
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
@@ -69,7 +69,7 @@ jobs:
       - name: Desplegar Microservicios en EC2 Backend
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "44.204.196.25" # IP pública de la ec2 backend
+          host: "13.220.44.34" # IP pública de la ec2 backend
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
