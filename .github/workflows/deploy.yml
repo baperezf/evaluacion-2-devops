@@ -56,17 +56,17 @@ jobs:
       - name: Desplegar Frontend en EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "13.220.129.95" # IP pública de tu ec2 frontend
+          host: "13.220.129.95"
           username: ec2-user    
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Instalar e iniciar Docker de manera autónoma si no existe
             if ! command -v docker &> /dev/null; then
-              sudo dnf install -y docker
-              sudo systemctl start docker
-              sudo systemctl enable docker
+              sudo yum install -y docker || sudo amazon-linux-extras install docker -y || true
             fi
+            sudo systemctl start docker || true
+            sudo systemctl enable docker || true
             
+            # Limpieza y despliegue del contenedor
             sudo docker stop proyecto-frontend || true
             sudo docker rm proyecto-frontend || true
             sudo docker pull ${{ secrets.DOCKER_HUB_USER }}/proyecto-frontend:latest
@@ -76,21 +76,22 @@ jobs:
       - name: Desplegar Microservicios en EC2 Backend
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "13.220.44.34" # IP pública de tu ec2 backend
+          host: "13.220.44.34" 
           username: ec2-user    
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Instalar e iniciar Docker de manera autónoma si no existe
+            # Plan de contingencia para asegurar Docker sin bloquear la red
             if ! command -v docker &> /dev/null; then
-              sudo dnf install -y docker
-              sudo systemctl start docker
-              sudo systemctl enable docker
+              sudo yum install -y docker || sudo amazon-linux-extras install docker -y || true
             fi
+            sudo systemctl start docker || true
+            sudo systemctl enable docker || true
             
+            # Limpieza y despliegue de microservicios
             sudo docker stop proyecto-back-ventas proyecto-back-despachos || true
             sudo docker rm proyecto-back-ventas proyecto-back-despachos || true
             sudo docker pull ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-ventas:latest
             sudo docker pull ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-despachos:latest
-
+            
             sudo docker run -d --name proyecto-back-ventas -p 8081:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://172.31.5.237:3306/db_despachos_ventas?useSSL=false ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-ventas:latest
             sudo docker run -d --name proyecto-back-despachos -p 8082:8080 -e SPRING_DATASOURCE_URL=jdbc:mysql://172.31.5.237:3306/db_despachos_ventas?useSSL=false ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-despachos:latest
