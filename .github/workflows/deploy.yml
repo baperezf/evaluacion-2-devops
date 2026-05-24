@@ -56,8 +56,8 @@ jobs:
       - name: Desplegar Frontend en EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "13.220.129.95" # IP pública de la ec2 frontend
-          username: ubuntu
+          host: "13.220.129.95" 
+          username: ec2-user    
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo docker stop proyecto-frontend || true
@@ -69,8 +69,8 @@ jobs:
       - name: Desplegar Microservicios en EC2 Backend
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "13.220.44.34" # IP pública de la ec2 backend
-          username: ubuntu
+          host: "13.220.44.34" 
+          username: ec2-user    
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo docker stop proyecto-back-ventas proyecto-back-despachos || true
