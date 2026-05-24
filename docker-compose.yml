@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # =========================================================
+  # 1. BASE DE DATOS (MySQL) - Cumple Rúbrica IE3 (Persistencia)
+  # =========================================================
+  database:
+    image: mysql:8.0
+    container_name: proyecto-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: db_despachos_ventas
+    ports:
+      - "3307:3306"
+    volumes:
+      # Volumen Nombrado para PERSISTENCIA (Exigido por pauta)
+      - db_data:/var/lib/mysql
+    networks:
+      - devops-network
+
+  # =========================================================
+  # 2. BACKEND: VENTAS (Java / Spring Boot)
+  # =========================================================
+  back-ventas:
+    build:
+      context: ./back-Ventas_SpringBoot/Springboot-API-REST
+      dockerfile: Dockerfile
+    container_name: proyecto-back-ventas
+    restart: always
+    ports:
+      - "8081:8080" # Mapeamos al puerto 8081 local para que no choque con el otro back
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://database:3306/db_despachos_ventas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=admin123
+    depends_on:
+      - database
+    networks:
+      - devops-network
+
+  # =========================================================
+  # 3. BACKEND: DESPACHOS (Java / Spring Boot)
+  # =========================================================
+  back-despachos:
+    build:
+      context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+      dockerfile: Dockerfile
+    container_name: proyecto-back-despachos
+    restart: always
+    ports:
+      - "8082:8080" # Mapeamos al puerto 8082 local
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://database:3306/db_despachos_ventas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=admin123
+    depends_on:
+      - database
+    networks:
+      - devops-network
+
+  # =========================================================
+  # 4. FRONTEND (React + Nginx)
+  # =========================================================
+  frontend:
+    build:
+      context: ./front_despacho
+      dockerfile: Dockerfile
+    container_name: proyecto-frontend
+    restart: always
+    ports:
+      - "8080:80" # Cumple con la sugerencia técnica de Duoc de exponer en el 8080
+    depends_on:
+      - back-ventas
+      - back-despachos
+    networks:
+      - devops-network
+
+# =========================================================
+# DEFINICIÓN DE VOLÚMENES Y REDES (Estándar DevOps)
+# =========================================================
+volumes:
+  db_data: # Este es el volumen nombrado que asegura que los datos sobrevivan
+
+networks:
+  devops-network:
+    driver: bridge
