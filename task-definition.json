@@ -4,14 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::937230669152:role/LabRole",
-  "taskRoleArn": "arn:aws:iam::937230669152:role/LabRole",
+  "executionRoleArn": "arn:aws:iam::326599159805:role/LabRole",
+  "taskRoleArn": "arn:aws:iam::326599159805:role/LabRole",
   "containerDefinitions": [
     {
       "name": "proyecto-frontend",
-      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-frontend:latest",
-      "cpu": 128,
-      "memory": 256,
+      "image": "326599159805.dkr.ecr.us-east-1.amazonaws.com/proyecto-frontend:latest",
       "essential": true,
       "portMappings": [
         {
@@ -23,9 +21,7 @@
     },
     {
       "name": "proyecto-back-ventas",
-      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-ventas:latest",
-      "cpu": 192,
-      "memory": 384,
+      "image": "326599159805.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-ventas:latest",
       "essential": true,
       "portMappings": [
         {
@@ -40,9 +36,7 @@
     },
     {
       "name": "proyecto-back-despachos",
-      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-despachos:latest",
-      "cpu": 192,
-      "memory": 384,
+      "image": "326599159805.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-despachos:latest",
       "essential": true,
       "portMappings": [
         {
