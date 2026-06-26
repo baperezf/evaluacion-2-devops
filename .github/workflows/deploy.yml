@@ -96,5 +96,5 @@ jobs:
         with:
           task-definition: ${{ steps.render-despachos.outputs.task-definition }}
           service: innovatech-service
-          cluster: cluster-innovatech
+          cluster: cluster-innovatech1
           wait-for-service-stability: false
