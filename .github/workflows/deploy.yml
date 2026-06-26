@@ -18,7 +18,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Iniciar sesion en Amazon ECR
         id: login-ecr
@@ -28,21 +28,21 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-frontend:latest ./app-evaluacion/front_despacho
+          docker build -t $ECR_REGISTRY/proyecto-frontend:latest ./front_despacho
           docker push $ECR_REGISTRY/proyecto-frontend:latest
 
       - name: Compilar y Subir Backend Ventas a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-back-ventas:latest ./app-evaluacion/back-Ventas_SpringBoot
+          docker build -t $ECR_REGISTRY/proyecto-back-ventas:latest ./back-Ventas_SpringBoot
           docker push $ECR_REGISTRY/proyecto-back-ventas:latest
 
       - name: Compilar y Subir Backend Despachos a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-back-despachos:latest ./app-evaluacion/back-Despachos_SpringBoot
+          docker build -t $ECR_REGISTRY/proyecto-back-despachos:latest ./back-Despachos_SpringBoot
           docker push $ECR_REGISTRY/proyecto-back-despachos:latest
   deploy:
     needs: build-and-push
@@ -63,12 +63,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 1. Renderizar la imagen del Frontend (Se le agrega el prefijo ./app-evaluacion/)
+      # 1. Renderizar la imagen del Frontend (Sin el prefijo de la subcarpeta)
       - name: Actualizar Frontend en Definicion de Tarea
         id: render-front
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ./app-evaluacion/task-definition.json
+          task-definition: task-definition.json
           container-name: proyecto-frontend
           image: ${{ steps.login-ecr.outputs.registry }}/proyecto-frontend:latest
 
