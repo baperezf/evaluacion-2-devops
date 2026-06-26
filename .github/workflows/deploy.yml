@@ -1,89 +1,101 @@
-name: CI/CD Pipeline - Proyecto Semestral DevOps
+name: Pipeline CI/CD Innovatech AWS (ECS Fargate)
 
 on:
   push:
     branches:
-      - deploy # Se activa únicamente al enviar cambios a la rama deploy
+      - deploy
 
 jobs:
-  # =========================================================
-  # ETAPA 1: COMPILAR Y PUBLICAR IMÁGENES (CI)
-  # =========================================================
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar codigo del repositorio
+      - name: Descargar Codigo fuente
         uses: actions/checkout@v4
 
-      - name: Autenticarse en Docker Hub
-        uses: docker/login-action@v3
+      - name: Configurar Credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # --- Construcción y subida del Backend Ventas ---
-      - name: Construir y Subir Backend Ventas
-        uses: docker/build-push-action@v5
-        with:
-          context: ./back-Ventas_SpringBoot/Springboot-API-REST
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-ventas:latest
+      - name: Iniciar sesion en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      # --- Construcción y subida del Backend Despachos ---
-      - name: Construir y Subir Backend Despachos
-        uses: docker/build-push-action@v5
-        with:
-          context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USER }}/proyecto-back-despachos:latest
+      - name: Compilar y Subir Frontend a ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/proyecto-frontend:latest ./proyecto-frontend
+          docker push $ECR_REGISTRY/proyecto-frontend:latest
 
-      # --- Construcción y subida del Frontend ---
-      - name: Construir y Subir Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./front_despacho
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USER }}/proyecto-frontend:latest
+      - name: Compilar y Subir Backend Ventas a ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/proyecto-back-ventas:latest ./proyecto-back-ventas
+          docker push $ECR_REGISTRY/proyecto-back-ventas:latest
 
-  # =========================================================
-  # ETAPA 2: DESPLIEGUE AUTOMÁTICO EN AWS (CD)
-  # =========================================================
+      - name: Compilar y Subir Backend Despachos a ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/proyecto-back-despachos:latest ./proyecto-back-despachos
+          docker push $ECR_REGISTRY/proyecto-back-despachos:latest
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      # --- Despliegue en la Instancia del Frontend ---
-      - name: Desplegar Frontend en EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: "13.220.129.95"
-          username: ec2-user    
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "=== INICIANDO DESPLIEGUE EN ENTORNO PRIVADO AWS ==="
-            echo "Verificando estado del host..."
-            uname -a
-            
-            # Simulación de contingencia para redes aisladas
-            echo "Configurando entorno virtualizado para Frontend..."
-            echo "PROYECTO_FRONTEND_STATUS=DEPLOYED" > .env
-            
-            echo "Descargando artefactos de forma estática..."
-            echo "Despliegue simulado exitoso en puerto 8080."
+      - name: Descargar Codigo fuente
+        uses: actions/checkout@v4
 
-      # --- Despliegue en la Instancia del Backend ---
-      - name: Desplegar Microservicios en EC2 Backend
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Configurar Credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: "13.220.44.34" 
-          username: ec2-user    
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "=== INICIANDO DESPLIEGUE DE MICROSERVICIOS ==="
-            echo "Verificando conectividad interna con DB externa..."
-            echo "Host DB: 172.31.5.237 -> Conexión establecida con éxito."
-            
-            echo "Levantando servicios del ecosistema Spring Boot..."
-            echo "Servicio Ventas inicializado en puerto 8081."
-            echo "Servicio Despachos inicializado en puerto 8082."
-            echo "=== FLUJO CD COMPLETADO EXITOSAMENTE ==="
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Iniciar sesion en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 1. Renderizar la imagen del Frontend
+      - name: Actualizar Frontend en Definicion de Tarea
+        id: render-front
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: proyecto-frontend
+          image: ${{ steps.login-ecr.outputs.registry }}/proyecto-frontend:latest
+
+      # 2. Renderizar la imagen de Ventas (usando la salida del paso anterior)
+      - name: Actualizar Ventas en Definicion de Tarea
+        id: render-ventas
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-front.outputs.task-definition }}
+          container-name: proyecto-back-ventas
+          image: ${{ steps.login-ecr.outputs.registry }}/proyecto-back-ventas:latest
+
+      # 3. Renderizar la imagen de Despachos (usando la salida de Ventas)
+      - name: Actualizar Despachos en Definicion de Tarea
+        id: render-despachos
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-ventas.outputs.task-definition }}
+          container-name: proyecto-back-despachos
+          image: ${{ steps.login-ecr.outputs.registry }}/proyecto-back-despachos:latest
+
+      # 4. Desplegar el archivo final consolidado en Amazon ECS
+      - name: Desplegar en Amazon ECS (Fargate)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-despachos.outputs.task-definition }}
+          service: innovatech-service
+          cluster: cluster-innovatech
+          wait-for-service-stability: false
