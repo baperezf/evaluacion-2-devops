@@ -28,21 +28,21 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-frontend:latest ./front_despacho
+          docker build -t $ECR_REGISTRY/proyecto-frontend:latest ./app-evaluacion/front_despacho
           docker push $ECR_REGISTRY/proyecto-frontend:latest
 
       - name: Compilar y Subir Backend Ventas a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-back-ventas:latest ./back-Ventas_SpringBoot
+          docker build -t $ECR_REGISTRY/proyecto-back-ventas:latest ./app-evaluacion/back-Ventas_SpringBoot
           docker push $ECR_REGISTRY/proyecto-back-ventas:latest
 
       - name: Compilar y Subir Backend Despachos a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/proyecto-back-despachos:latest ./back-Despachos_SpringBoot
+          docker build -t $ECR_REGISTRY/proyecto-back-despachos:latest ./app-evaluacion/back-Despachos_SpringBoot
           docker push $ECR_REGISTRY/proyecto-back-despachos:latest
   deploy:
     needs: build-and-push
