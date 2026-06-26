@@ -63,16 +63,16 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 1. Renderizar la imagen del Frontend
+      # 1. Renderizar la imagen del Frontend (Se le agrega el prefijo ./app-evaluacion/)
       - name: Actualizar Frontend en Definicion de Tarea
         id: render-front
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition: ./app-evaluacion/task-definition.json
           container-name: proyecto-frontend
           image: ${{ steps.login-ecr.outputs.registry }}/proyecto-frontend:latest
 
-      # 2. Renderizar la imagen de Ventas (usando la salida del paso anterior)
+      # 2. Renderizar la imagen de Ventas (Aquí sigue heredando dinámicamente)
       - name: Actualizar Ventas en Definicion de Tarea
         id: render-ventas
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -81,12 +81,12 @@ jobs:
           container-name: proyecto-back-ventas
           image: ${{ steps.login-ecr.outputs.registry }}/proyecto-back-ventas:latest
 
-      # 3. Renderizar la imagen de Despachos (usando la salida de Ventas)
+      # 3. Renderizar la imagen de Despachos
       - name: Actualizar Despachos en Definicion de Tarea
         id: render-despachos
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ steps.render-ventas.outputs.task-definition }}
+          task-definition: ${{ secrets.render-ventas.outputs.task-definition || steps.render-ventas.outputs.task-definition }}
           container-name: proyecto-back-despachos
           image: ${{ steps.login-ecr.outputs.registry }}/proyecto-back-despachos:latest
 
