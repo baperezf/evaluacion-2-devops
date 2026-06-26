@@ -1,0 +1,59 @@
+{
+  "family": "innovatech-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::937230669152:role/LabRole",
+  "taskRoleArn": "arn:aws:iam::937230669152:role/LabRole",
+  "containerDefinitions": [
+    {
+      "name": "proyecto-frontend",
+      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-frontend:latest",
+      "cpu": 128,
+      "memory": 256,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "proyecto-back-ventas",
+      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-ventas:latest",
+      "cpu": 192,
+      "memory": 384,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8081,
+          "hostPort": 8081,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DB_HOST", "value": "172.31.5.237" }
+      ]
+    },
+    {
+      "name": "proyecto-back-despachos",
+      "image": "937230669152.dkr.ecr.us-east-1.amazonaws.com/proyecto-back-despachos:latest",
+      "cpu": 192,
+      "memory": 384,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8082,
+          "hostPort": 8082,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DB_HOST", "value": "172.31.5.237" }
+      ]
+    }
+  ]
+}

@@ -41,7 +41,7 @@ RUN chown -R devopsuser:devopsgroup /app
 USER devopsuser
 
 # Puerto por defecto de las aplicaciones Spring Boot (Comúnmente 8080, confírmame si usan este)
-EXPOSE 8080
+EXPOSE 8081
 
 # Comando para ejecutar nuestra API de Java
 CMD ["java", "-jar", "app.jar"]
